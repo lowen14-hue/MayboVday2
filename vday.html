@@ -10,105 +10,117 @@ body {
     font-family: "Courier New", monospace;
     background: #000;
     color: #0f0;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
-#screen {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
+#gridContainer {
+    display: grid;
+    grid-template-columns: repeat(15, 40px);
+    grid-template-rows: repeat(15, 40px);
+    gap: 3px;
+    margin-bottom: 20px;
 }
 
-.number {
-    position: absolute;
+.cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000;
+    color: #0f0;
+    border: 1px solid #0f0;
     font-size: 16px;
     cursor: pointer;
-    transition: transform 0.3s, color 0.3s;
+    transition: transform 0.2s, color 0.2s;
 }
 
-.number:hover {
-    transform: scale(1.5);
+.cell.correct:hover {
+    transform: scale(1.3);
     color: #ff4d6d;
 }
 
 #bucket {
-    position: fixed;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
     color: #0f0;
-    font-size: 20px;
-    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 20px;
 }
 
 #message {
-    position: fixed;
-    top: 30%;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 32px;
+    font-size: 28px;
+    color: #ff4d6d;
     display: none;
     text-align: center;
-    color: #ff4d6d;
 }
 </style>
 </head>
 <body>
-<div id="screen"></div>
-<div id="bucket">Found: </div>
-<div id="message">Makayla… will you be my Valentine? 💌</div>
+
+<h1>V-Day Number Search</h1>
+<div id="gridContainer"></div>
+<div id="bucket">Found: 0/6</div>
+<div id="message">Makayla… will you be my Valentine! 💌</div>
 
 <script>
-// --- GAME DATA ---
+// --- Game data ---
 const codes = [
-    {code: "092", word: "Makayla,"},
-    {code: "118", word: "will"},
-    {code: "205", word: "you"},
-    {code: "402", word: "be"},
-    {code: "319", word: "my"},
-    {code: "583", word: "Valentine?"}
+    {code:"092", word:"Makayla,"},
+    {code:"118", word:"will"},
+    {code:"205", word:"you"},
+    {code:"402", word:"be"},
+    {code:"319", word:"my"},
+    {code:"583", word:"Valentine?"}
 ];
 
+const gridSize = 15;
+const totalCells = gridSize * gridSize;
 let found = [];
 
-// --- GENERATE RANDOM NUMBERS ---
-const screen = document.getElementById("screen");
-for(let i=0; i<300; i++){ // total random numbers on screen
-    const span = document.createElement("span");
-    span.classList.add("number");
-    // Random 3-digit number
-    let num = Math.floor(Math.random()*900 + 100).toString();
+// --- Generate empty grid ---
+const gridContainer = document.getElementById("gridContainer");
+let cells = [];
 
-    // Randomly insert a code from the hidden list
-    if(Math.random() < 0.02 && codes.length > 0){ // ~2% chance per number
-        const idx = Math.floor(Math.random()*codes.length);
-        num = codes[idx].code;
-    }
-
-    span.textContent = num;
-    span.style.top = Math.random() * (window.innerHeight - 20) + "px";
-    span.style.left = Math.random() * (window.innerWidth - 50) + "px";
-    span.dataset.code = num;
-    screen.appendChild(span);
+for(let i=0; i<totalCells; i++){
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    // Assign random 3-digit number
+    cell.textContent = String(Math.floor(Math.random()*900 + 100));
+    gridContainer.appendChild(cell);
+    cells.push(cell);
 }
 
-// --- CLICK HANDLER ---
-screen.addEventListener("click", (e)=>{
-    if(e.target.classList.contains("number")){
+// --- Place codes randomly in grid ---
+codes.forEach(c=>{
+    let placed = false;
+    while(!placed){
+        const idx = Math.floor(Math.random() * totalCells);
+        if(!cells[idx].dataset.code){ // empty cell
+            cells[idx].textContent = c.code;
+            cells[idx].dataset.code = c.code;
+            cells[idx].classList.add("correct");
+            placed = true;
+        }
+    }
+});
+
+// --- Click handler ---
+gridContainer.addEventListener("click", (e)=>{
+    if(e.target.classList.contains("correct")){
         const code = e.target.dataset.code;
-        const idx = codes.findIndex(c => c.code === code);
-        if(idx !== -1 && !found.includes(code)){
+        if(!found.includes(code)){
             found.push(code);
-            document.getElementById("bucket").textContent = "Found: " + found.length + "/6";
+            document.getElementById("bucket").textContent = `Found: ${found.length}/6`;
             e.target.style.color = "#ff4d6d";
             e.target.style.fontWeight = "bold";
-            // Check if all found
-            if(found.length === codes.length){
-                document.getElementById("message").style.display = "block";
-            }
+        }
+        if(found.length === codes.length){
+            document.getElementById("message").style.display = "block";
         }
     }
 });
 </script>
+
 </body>
 </html>
