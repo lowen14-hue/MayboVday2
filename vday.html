@@ -10,22 +10,15 @@ body {
     font-family: monospace;
     background: #001f4d; /* dark blue background */
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100vh;
-}
-
-h1 {
-    margin: 10px 0;
-    color: #fff;
 }
 
 #grid {
     display: grid;
-    grid-template-columns: repeat(25, 60px);
-    grid-template-rows: repeat(10, 60px);
-    gap: 3px;
+    grid-template-columns: repeat(25, 50px);
+    grid-template-rows: repeat(10, 50px);
+    gap: 2px;
+    width: 100vw;
+    height: 100vh;
     position: relative;
 }
 
@@ -34,32 +27,39 @@ h1 {
     justify-content: center;
     align-items: center;
     font-size: 28px;
-    cursor: pointer;
-    user-select: none;
-    transition: transform 0.2s;
     color: #fff;
+    user-select: none;
+    position: relative;
     text-shadow: 0 0 2px #0f0, 0 0 4px #0f0;
+    cursor: pointer;
+    transition: transform 0.2s;
 }
 
-/* Hover effect to indicate correct numbers */
+/* Hover effect: grow numbers */
 .cell.correct:hover {
     transform: scale(1.5);
 }
 
 /* Bucket */
 #bucket {
-    margin-top: 10px;
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
     font-size: 22px;
     font-weight: bold;
-    color: #fff;
     text-shadow: 0 0 4px #0f0;
 }
 
 /* Final message */
 #message {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 32px;
     color: #ff4d6d;
-    margin-top: 20px;
     display: none;
     text-align: center;
 }
@@ -67,13 +67,12 @@ h1 {
 </head>
 <body>
 
-<h1>V-Day Number Search</h1>
 <div id="grid"></div>
 <div id="bucket">Found: 0/6</div>
 <div id="message">Makayla… will you be my Valentine! 💌</div>
 
 <script>
-// --- Game Data: each word is 3-digit number ---
+// --- Data: each word = 3-digit sequence ---
 const codes = [
     {digits:["0","9","2"], word:"Makayla,"},
     {digits:["1","1","8"], word:"will"},
@@ -87,7 +86,7 @@ const rows = 10;
 const cols = 25;
 let found = [];
 
-// --- Generate the grid ---
+// --- Generate grid ---
 const grid = document.getElementById("grid");
 let cells = [];
 
@@ -98,22 +97,21 @@ for(let r=0; r<rows; r++){
         cell.textContent = Math.floor(Math.random()*10);
         grid.appendChild(cell);
         cells.push(cell);
-        // Drifting parameters
-        cell.dataset.dx = (Math.random()*2-1)*0.5;
-        cell.dataset.dy = (Math.random()*2-1)*0.5;
+        // drifting params
+        cell.dataset.dx = (Math.random()*2-1)*0.3;
+        cell.dataset.dy = (Math.random()*2-1)*0.3;
         cell.dataset.x = 0;
         cell.dataset.y = 0;
     }
 }
 
-// --- Place codes near each other horizontally ---
+// --- Place codes horizontally ---
 codes.forEach(codeObj => {
     let placed = false;
     while(!placed){
         const startIdx = Math.floor(Math.random() * (cells.length - 3));
-        const rowStart = Math.floor(startIdx/cols);
         const colStart = startIdx % cols;
-        if(colStart <= cols - 3){
+        if(colStart <= cols - 3){ // fits horizontally
             for(let i=0; i<3; i++){
                 cells[startIdx+i].textContent = codeObj.digits[i];
                 cells[startIdx+i].dataset.code = codeObj.word;
@@ -129,16 +127,18 @@ codes.forEach(codeObj => {
 let wordProgress = {};
 codes.forEach(c=>wordProgress[c.word] = 0);
 
-// --- Animate drifting and flicker ---
-function driftAndFlicker() {
+// --- Animate drift + subtle flicker ---
+function animateGrid(){
     cells.forEach(cell=>{
         // drift
         let x = parseFloat(cell.dataset.x);
         let y = parseFloat(cell.dataset.y);
         let dx = parseFloat(cell.dataset.dx);
         let dy = parseFloat(cell.dataset.dy);
+
         if(Math.abs(x+dx) > 2) dx = -dx;
         if(Math.abs(y+dy) > 2) dy = -dy;
+
         x += dx;
         y += dy;
         cell.dataset.x = x;
@@ -146,23 +146,24 @@ function driftAndFlicker() {
         cell.dataset.dx = dx;
         cell.dataset.dy = dy;
 
-        // flicker
+        // flicker/glow
         const glow = Math.random()*2 + 2;
         cell.style.textShadow = `0 0 ${glow}px #0f0, 0 0 ${glow*2}px #0f0`;
+
         cell.style.transform = `translate(${x}px, ${y}px)`;
     });
-    requestAnimationFrame(driftAndFlicker);
+    requestAnimationFrame(animateGrid);
 }
-driftAndFlicker();
+animateGrid();
 
-// --- Click handler with flying animation to bucket ---
+// --- Click handler with flying animation ---
 const bucket = document.getElementById("bucket");
 grid.addEventListener("click", e=>{
     if(e.target.classList.contains("correct")){
         const word = e.target.dataset.code;
         if(wordProgress[word] < 3){
             wordProgress[word]++;
-            // Animate clone into bucket
+            // Animate clone to bucket
             const rect = e.target.getBoundingClientRect();
             const bucketRect = bucket.getBoundingClientRect();
             const clone = e.target.cloneNode(true);
