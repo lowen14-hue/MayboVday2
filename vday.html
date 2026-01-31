@@ -72,6 +72,9 @@ let finished = false;
 // Floating drift offsets for cinematic feel
 let driftX = 0, driftY = 0;
 
+// Flicker overlay
+let flickerOpacity = 0.05;
+
 // --- Setup ---
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -99,7 +102,6 @@ function setup() {
     while(!placed){
       let idx = floor(random(grid.length-3));
       if(idx%cols <= cols-3){
-        // Ensure no overlap with previous sequences
         if(!grid[idx].important && !grid[idx+1].important && !grid[idx+2].important){
           for(let i=0;i<3;i++){
             let cell = grid[idx+i];
@@ -117,10 +119,16 @@ function setup() {
 // --- Draw ---
 function draw() {
   if(finished) return;
+
+  // Flicker effect
+  flickerOpacity = random(0.03,0.08);
   background('#001f4d');
+  fill(255,255,255,flickerOpacity*255);
+  noStroke();
+  rect(0,0,width,height);
 
   // scanlines
-  stroke(255,255,255,30);
+  stroke(255,255,255,20 + flickerOpacity*100);
   for(let y=0;y<height;y+=4) line(0,y,width,y);
   noStroke();
 
