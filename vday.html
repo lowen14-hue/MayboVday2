@@ -52,8 +52,8 @@ function setup() {
     for(let x=0;x<cols;x++){
       grid.push({
         x:x, y:y,
-        dx:random(-0.2,0.2),
-        dy:random(-0.2,0.2),
+        dx:random(-0.02,0.02), // SLOW drift
+        dy:random(-0.02,0.02), // SLOW drift
         val:floor(random(10)),
         correct:false
       });
@@ -62,7 +62,7 @@ function setup() {
   
   // Place codes horizontally
   codes.forEach(codeObj=>{
-    let placed=false;
+    let placed = false;
     while(!placed){
       let idx = floor(random(grid.length-3));
       let colStart = idx%cols;
@@ -82,7 +82,7 @@ function setup() {
 function draw() {
   background('#001f4d');
   for(let cell of grid){
-    // drift
+    // slow drift
     cell.x += cell.dx;
     cell.y += cell.dy;
     if(cell.x<0 || cell.x>cols-1) cell.dx*=-1;
@@ -107,6 +107,7 @@ function mousePressed() {
     let py = cell.y*cellHeight + cellHeight/2;
     if(cell.correct && dist(mouseX,mouseY,px,py)<cellWidth/2){
       progress[cell.word]++;
+      
       // Animate flying number
       let fly = createDiv(cell.val);
       fly.style.position="absolute";
@@ -140,3 +141,4 @@ function mousePressed() {
 </script>
 </body>
 </html>
+
