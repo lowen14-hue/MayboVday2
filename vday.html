@@ -1,97 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF‑8">
-<meta name="viewport" content="width=device‑width, initial‑scale=1.0">
-<title>Macrodata Refinement — V‑Day Edition</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macrodata Refinement V-Day</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
 <style>
-body {
-  margin: 0;
-  background: #001f4d;
-  font-family: monospace;
-  overflow: hidden;
-}
-
+body { margin:0; background:#001f4d; overflow:hidden; font-family: monospace; }
 #bucket {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 22px;
-  color: #fff;
-  text-shadow: 0 0 4px #0f0;
+  position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+  font-size:22px; color:#fff; text-shadow:0 0 4px #0f0;
 }
-
 #message {
-  position: absolute;
-  top: 45%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 32px;
-  color: #ff4d6d;
-  display: none;
-  text-align: center;
-}
-
-canvas {
-  display: block;
+  position:absolute; top:40%; left:50%; transform:translate(-50%, -50%);
+  font-size:32px; color:#ff4d6d; display:none; text-align:center;
 }
 </style>
 </head>
 <body>
-
 <div id="bucket">Found: 0/6</div>
 <div id="message">Makayla… will you be my Valentine! 💌</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
 <script>
-// --- Inspired Macrodata Canvas ---
-
+// === Macrodata-Inspired Variables ===
 const sequences = [
-  {digits: ['0', '9', '2'], found: 0},
-  {digits: ['1', '1', '8'], found: 0},
-  {digits: ['2', '0', '5'], found: 0},
-  {digits: ['4', '0', '2'], found: 0},
-  {digits: ['3', '1', '9'], found: 0},
-  {digits: ['5', '8', '3'], found: 0}
+  {digits:['0','9','2'], found:0},
+  {digits:['1','1','8'], found:0},
+  {digits:['2','0','5'], found:0},
+  {digits:['4','0','2'], found:0},
+  {digits:['3','1','9'], found:0},
+  {digits:['5','8','3'], found:0}
 ];
 
 let grid = [];
-const rows = 20, cols = 30;
+const rows = 15, cols = 25;
 let cellW, cellH;
+
+let dragging = false;
+let dragStart = null;
+let dragEnd = null;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  textAlign(CENTER,CENTER);
   textSize(28);
-  textAlign(CENTER, CENTER);
-  
+  fill(255);
+
   cellW = width / cols;
   cellH = height / rows;
-  
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
+
+  // Create grid of numbers
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
       grid.push({
-        x,
-        y,
-        dx: random(-0.02, 0.02),
-        dy: random(-0.02, 0.02),
-        val: floor(random(10)),
-        matched: false
+        baseX:x, baseY:y,
+        dx:random(-1,1), dy:random(-1,1),
+        val:floor(random(10)),
+        important:false,
+        picked:false,
+        wiggleOffsetX:0,
+        wiggleOffsetY:0
       });
     }
   }
-  
-  // Place sequences horizontally
-  sequences.forEach(seq => {
+
+  // Place important sequences horizontally
+  sequences.forEach(seq=>{
     let placed = false;
-    while (!placed) {
-      let idx = floor(random(grid.length - 3));
-      if ((idx % cols) <= (cols - 3)) {
-        for (let i = 0; i < 3; i++) {
-          let cell = grid[idx + i];
+    while(!placed){
+      let idx = floor(random(grid.length-3));
+      if((idx%cols) <= (cols-3)){
+        for(let i=0;i<3;i++){
+          let cell = grid[idx+i];
           cell.val = seq.digits[i];
-          cell.code = seq;
-          cell.matched = true;
+          cell.important = true;
+          cell.seq = seq;
         }
         placed = true;
       }
@@ -101,60 +84,76 @@ function setup() {
 
 function draw() {
   background('#001f4d');
-  grid.forEach(cell => {
-    cell.x += cell.dx;
-    cell.y += cell.dy;
-    if (cell.x < 0 || cell.x > cols - 1) cell.dx *= -1;
-    if (cell.y < 0 || cell.y > rows - 1) cell.dy *= -1;
-    
-    const px = cell.x * cellW + cellW / 2;
-    const py = cell.y * cellH + cellH / 2;
-    
-    const glow = random(2, 4);
+
+  // Draw selection rectangle if dragging
+  if(dragging && dragStart && dragEnd){
+    noFill();
+    stroke(0,255,0);
+    rect(dragStart.x, dragStart.y, dragEnd.x - dragStart.x, dragEnd.y - dragStart.y);
+  }
+
+  // Draw numbers
+  grid.forEach(cell=>{
+    // Wiggle in place
+    cell.wiggleOffsetX += cell.dx * 0.2;
+    cell.wiggleOffsetY += cell.dy * 0.2;
+
+    let px = cell.baseX*cellW + cellW/2 + cell.wiggleOffsetX;
+    let py = cell.baseY*cellH + cellH/2 + cell.wiggleOffsetY;
+
+    // Important numbers bigger
+    let size = cell.important ? 36 : 28;
+
+    // Green flicker glow
+    let glow = random(2,4);
     drawingContext.shadowColor = '#0f0';
     drawingContext.shadowBlur = glow;
-    
+
     fill(255);
+    textSize(size);
     text(cell.val, px, py);
+    cell.screenX = px;
+    cell.screenY = py;
+    cell.screenSize = size;
   });
 }
 
 function mousePressed() {
+  dragging = true;
+  dragStart = createVector(mouseX, mouseY);
+  dragEnd = dragStart.copy();
+}
+
+function mouseDragged() {
+  if(dragging) dragEnd = createVector(mouseX, mouseY);
+}
+
+function mouseReleased() {
+  dragging = false;
+  dragEnd = createVector(mouseX, mouseY);
+
+  // Check which cells are inside the drag box
+  let x1 = min(dragStart.x, dragEnd.x);
+  let x2 = max(dragStart.x, dragEnd.x);
+  let y1 = min(dragStart.y, dragEnd.y);
+  let y2 = max(dragStart.y, dragEnd.y);
+
   let bucket = document.getElementById('bucket');
-  grid.forEach(cell => {
-    const px = cell.x * cellW + cellW / 2;
-    const py = cell.y * cellH + cellH / 2;
-    if (cell.matched && dist(mouseX, mouseY, px, py) < cellW / 2) {
-      cell.matched = false;
-      cell.code.found++;
-      
-      let fly = createDiv(cell.val);
-      fly.style.position = 'absolute';
-      fly.style.left = px + 'px';
-      fly.style.top = py + 'px';
-      fly.style.fontSize = '28px';
-      fly.style.color = '#fff';
-      fly.style.transition = 'all 0.7s ease';
-      document.body.appendChild(fly);
-      
-      setTimeout(() => {
-        let bRect = bucket.getBoundingClientRect();
-        fly.style.left = bRect.left + bRect.width / 2 + 'px';
-        fly.style.top = bRect.top + 'px';
-        fly.style.transform = 'scale(0.6)';
-        fly.style.opacity = '0.5';
-      }, 10);
-      
-      setTimeout(() => fly.remove(), 800);
-      
-      document.body.querySelector('#bucket').innerText = `Found: ${sequences.filter(s => s.found === 3).length}/6`;
-      if (sequences.every(s => s.found === 3)) {
-        document.getElementById('message').style.display = 'block';
-      }
+
+  grid.forEach(cell=>{
+    if(!cell.picked && cell.important &&
+       cell.screenX >= x1 && cell.screenX <= x2 &&
+       cell.screenY >= y1 && cell.screenY <= y2){
+         cell.picked = true;
+         cell.seq.found++;
+         bucket.innerText = `Found: ${sequences.filter(s=>s.found===3).length}/6`;
+
+         if(sequences.every(s=>s.found===3)){
+           document.getElementById('message').style.display = 'block';
+         }
     }
   });
 }
 </script>
-
 </body>
 </html>
