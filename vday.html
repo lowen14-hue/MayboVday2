@@ -3,122 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V-Day Severance Game</title>
+<title>Severance V‑Day Message</title>
 <style>
+
+/* Basic reset + body look */
 body {
-    font-family: 'Courier New', Courier, monospace;
-    background-color: #111;
+    margin: 0;
+    font-family: "Courier New", monospace;
+    background: #000;
     color: #0f0;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    margin: 0;
 }
 
-.container {
+/* Container */
+#screen {
+    background: #000;
+    border: 3px solid #0f0;
+    padding: 30px;
+    max-width: 800px;
     text-align: center;
-    background-color: #000;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 0 30px #0f0;
-    max-width: 500px;
 }
 
-h1 {
-    color: #0f0;
-    margin-bottom: 20px;
-    font-size: 28px;
+/* Message text */
+#revealedText {
+    font-size: 24px;
     letter-spacing: 2px;
-}
-
-p {
-    margin-bottom: 30px;
-}
-
-.number-grid {
-    display: flex;
-    justify-content: space-around;
     margin-bottom: 20px;
 }
 
-.number {
-    font-size: 32px;
+/* Code blocks like screen data */
+.codeGroup {
+    display: inline-block;
+    margin: 10px;
+    font-size: 28px;
+    padding: 12px 18px;
+    border: 1px solid #0f0;
+    transition: 0.3s ease;
     cursor: pointer;
-    transition: transform 0.3s, color 0.3s;
 }
 
-.number:hover {
-    transform: scale(2);
+/* Hover effect similar to Lumon data glow */
+.codeGroup:hover {
+    transform: scale(1.8);
     color: #ff4d6d;
+    border-color: #ff4d6d;
 }
 
-#message {
-    min-height: 40px;
-    font-size: 18px;
-    color: #0f0;
-}
 </style>
 </head>
 <body>
-<div class="container">
-    <h1>V-Day Number Game</h1>
-    <p>Hover over the numbers to find the correct code.</p>
-    <div class="number-grid" id="numbers"></div>
-    <p id="message">Step 1: Find the first code.</p>
+
+<div id="screen">
+    <div id="revealedText">Hover each group to reveal the message...</div>
+    <div id="codes"></div>
 </div>
 
 <script>
-// --- GAME DATA ---
-const codes = ["314", "271", "618"]; // Correct codes
-const messages = [
-    "Good. You're awake. Now, find the next code.",
-    "You're on the right track. One more to go...",
-    "Almost there. Last code!"
+// This array of objects defines:
+// "code": the random-style numeric label shown initially
+// "word": the actual word of your message
+const sequence = [
+    {code:"092", word:"Makayla,"},
+    {code:"118", word:"will"},
+    {code:"205", word:"you"},
+    {code:"402", word:"be"},
+    {code:"319", word:"my"},
+    {code:"583", word:"Valentine?"}
 ];
-const finalMessage = "Makayla… will you be my Valentine? 💌";
 
-let step = 0;
+let current = 0;
 
-// --- NUMBERS TO DISPLAY ---
-function generateNumbers() {
-    const grid = document.getElementById("numbers");
-    grid.innerHTML = "";
-    // Add random distractor numbers + the correct code
-    let nums = [];
-    for(let i=0; i<4; i++){
-        nums.push(Math.floor(Math.random()*900 + 100).toString());
+// render codes initially
+const container = document.getElementById("codes");
+sequence.forEach((item, index) => {
+    const span = document.createElement("span");
+    span.textContent = item.code;
+    span.className = "codeGroup";
+    span.dataset.index = index;
+    container.appendChild(span);
+});
+
+// update revealed text when hovered
+container.addEventListener("mouseover", (e) => {
+    if (e.target.classList.contains("codeGroup")) {
+        const idx = parseInt(e.target.dataset.index);
+        document.getElementById("revealedText").textContent = sequence[idx].word;
     }
-    // Replace a random number with the correct code
-    const correctIndex = Math.floor(Math.random()*4);
-    nums[correctIndex] = codes[step];
-    nums.forEach(num => {
-        const span = document.createElement("span");
-        span.textContent = num;
-        span.classList.add("number");
-        span.addEventListener("click", () => checkCode(num));
-        grid.appendChild(span);
-    });
-}
+});
 
-function checkCode(num) {
-    const message = document.getElementById("message");
-    if(num === codes[step]) {
-        if(step < codes.length - 1){
-            message.textContent = messages[step];
-            step++;
-            generateNumbers();
-        } else {
-            message.textContent = finalMessage;
-            document.getElementById("numbers").style.display = "none";
-        }
-    } else {
-        message.textContent = "Incorrect. Try again.";
-    }
-}
-
-// --- INIT ---
-generateNumbers();
+// Optional: clear text when not hovering
+container.addEventListener("mouseout", (e) => {
+    document.getElementById("revealedText").textContent = "";
+});
 </script>
+
 </body>
 </html>
