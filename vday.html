@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Severance V-Day Number Search</title>
+<title>Severance V-Day Macrodata</title>
 <style>
 body {
     margin: 0;
     font-family: monospace;
     background: #001f4d; /* dark blue background */
-    color: #fff;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -27,30 +26,36 @@ h1 {
     grid-template-columns: repeat(25, 60px);
     grid-template-rows: repeat(10, 60px);
     gap: 3px;
+    position: relative;
 }
 
 .cell {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 28px; /* bigger numbers */
+    font-size: 28px;
     cursor: pointer;
-    transition: transform 0.2s, color 0.2s;
     user-select: none;
+    transition: transform 0.2s;
+    color: #fff;
+    text-shadow: 0 0 2px #0f0, 0 0 4px #0f0;
 }
 
-/* correct number hover effect */
+/* Hover effect to indicate correct numbers */
 .cell.correct:hover {
     transform: scale(1.5);
-    color: #ff4d6d;
 }
 
+/* Bucket */
 #bucket {
     margin-top: 10px;
     font-size: 22px;
     font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 4px #0f0;
 }
 
+/* Final message */
 #message {
     font-size: 32px;
     color: #ff4d6d;
@@ -93,6 +98,11 @@ for(let r=0; r<rows; r++){
         cell.textContent = Math.floor(Math.random()*10);
         grid.appendChild(cell);
         cells.push(cell);
+        // Drifting parameters
+        cell.dataset.dx = (Math.random()*2-1)*0.5;
+        cell.dataset.dy = (Math.random()*2-1)*0.5;
+        cell.dataset.x = 0;
+        cell.dataset.y = 0;
     }
 }
 
@@ -103,7 +113,7 @@ codes.forEach(codeObj => {
         const startIdx = Math.floor(Math.random() * (cells.length - 3));
         const rowStart = Math.floor(startIdx/cols);
         const colStart = startIdx % cols;
-        if(colStart <= cols - 3){ // fits horizontally
+        if(colStart <= cols - 3){
             for(let i=0; i<3; i++){
                 cells[startIdx+i].textContent = codeObj.digits[i];
                 cells[startIdx+i].dataset.code = codeObj.word;
@@ -119,17 +129,60 @@ codes.forEach(codeObj => {
 let wordProgress = {};
 codes.forEach(c=>wordProgress[c.word] = 0);
 
-// --- Click handler ---
+// --- Animate drifting and flicker ---
+function driftAndFlicker() {
+    cells.forEach(cell=>{
+        // drift
+        let x = parseFloat(cell.dataset.x);
+        let y = parseFloat(cell.dataset.y);
+        let dx = parseFloat(cell.dataset.dx);
+        let dy = parseFloat(cell.dataset.dy);
+        if(Math.abs(x+dx) > 2) dx = -dx;
+        if(Math.abs(y+dy) > 2) dy = -dy;
+        x += dx;
+        y += dy;
+        cell.dataset.x = x;
+        cell.dataset.y = y;
+        cell.dataset.dx = dx;
+        cell.dataset.dy = dy;
+
+        // flicker
+        const glow = Math.random()*2 + 2;
+        cell.style.textShadow = `0 0 ${glow}px #0f0, 0 0 ${glow*2}px #0f0`;
+        cell.style.transform = `translate(${x}px, ${y}px)`;
+    });
+    requestAnimationFrame(driftAndFlicker);
+}
+driftAndFlicker();
+
+// --- Click handler with flying animation to bucket ---
 const bucket = document.getElementById("bucket");
 grid.addEventListener("click", e=>{
     if(e.target.classList.contains("correct")){
         const word = e.target.dataset.code;
         if(wordProgress[word] < 3){
             wordProgress[word]++;
+            // Animate clone into bucket
+            const rect = e.target.getBoundingClientRect();
+            const bucketRect = bucket.getBoundingClientRect();
+            const clone = e.target.cloneNode(true);
+            clone.style.position = "fixed";
+            clone.style.left = rect.left+"px";
+            clone.style.top = rect.top+"px";
+            clone.style.transform = "none";
+            clone.style.transition = "all 0.8s ease-in-out";
+            document.body.appendChild(clone);
+            setTimeout(()=>{
+                clone.style.left = bucketRect.left + bucketRect.width/2 + "px";
+                clone.style.top = bucketRect.top + "px";
+                clone.style.transform = "scale(0.5)";
+                clone.style.opacity = "0.5";
+            },10);
+            setTimeout(()=>{clone.remove();},900);
         }
 
-        e.target.style.color = "#ff4d6d";
-        e.target.style.fontWeight = "bold";
+        // mark as clicked
+        e.target.style.pointerEvents = "none";
 
         // Check if word completed
         if(wordProgress[word] === 3 && !found.includes(word)){
