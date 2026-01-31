@@ -20,6 +20,13 @@ body { margin:0; background:#001f4d; overflow:hidden; font-family: monospace; }
   font-size:32px; color:#ff4d6d; display:none; text-align:center;
 }
 canvas { display:block; }
+.fly-number {
+  position:absolute;
+  color:#fff;
+  font-family: monospace;
+  font-weight:bold;
+  pointer-events:none;
+}
 </style>
 </head>
 <body>
@@ -29,7 +36,7 @@ canvas { display:block; }
 <div id="message">Makayla… will you be my Valentine! 💌</div>
 
 <script>
-// === Macrodata-inspired variables ===
+// --- Macrodata-inspired variables ---
 const sequences = [
   {digits:['0','9','2'], found:0},
   {digits:['1','1','8'], found:0},
@@ -54,7 +61,7 @@ function setup() {
   cellW = width / cols;
   cellH = height / rows;
 
-  // Create numbers grid
+  // Create grid
   for(let y=0;y<rows;y++){
     for(let x=0;x<cols;x++){
       grid.push({
@@ -67,7 +74,7 @@ function setup() {
     }
   }
 
-  // Place important sequences horizontally
+  // Place sequences
   sequences.forEach(seq=>{
     let placed=false;
     while(!placed){
@@ -88,31 +95,28 @@ function setup() {
 function draw() {
   background('#001f4d');
 
-  // Draw subtle scanlines
+  // scanlines
   stroke(0,255,0,30);
   for(let y=0;y<height;y+=4) line(0,y,width,y);
   noStroke();
 
-  // Draw selection box
+  // selection box
   if(dragging && dragStart && dragEnd){
     noFill();
     stroke(0,255,0);
     rect(dragStart.x, dragStart.y, dragEnd.x-dragStart.x, dragEnd.y-dragStart.y);
   }
 
-  // Draw numbers
+  // draw numbers
   grid.forEach(cell=>{
-    // Wiggle in place
     cell.wiggleX = random(-1,1);
     cell.wiggleY = random(-1,1);
     cell.pulse = 1 + (cell.important ? 0.3*sin(frameCount*0.05) : 0);
 
     let px = cell.baseX*cellW + cellW/2 + cell.wiggleX;
     let py = cell.baseY*cellH + cellH/2 + cell.wiggleY;
-
     let size = (cell.important ? 36 : 28) * cell.pulse;
 
-    // Glow/flicker
     drawingContext.shadowColor = '#0f0';
     drawingContext.shadowBlur = random(2,4);
 
@@ -148,22 +152,39 @@ function mouseReleased() {
   let bucket = document.getElementById('bucket');
 
   grid.forEach(cell=>{
-    // Capture any number in the box
     if(!cell.picked &&
        cell.screenX>=x1 && cell.screenX<=x2 &&
        cell.screenY>=y1 && cell.screenY<=y2){
-         cell.picked = true;
 
-         // If important, count progress
-         if(cell.important){
-           cell.seq.found++;
-         }
+      cell.picked = true;
 
-         bucket.innerText = `Found: ${sequences.filter(s=>s.found>=3).length}/6`;
+      // Animate flying number
+      let fly = document.createElement('div');
+      fly.className = 'fly-number';
+      fly.innerText = cell.val;
+      fly.style.left = cell.screenX+'px';
+      fly.style.top = cell.screenY+'px';
+      fly.style.fontSize = (cell.important ? 36 : 28) + 'px';
+      document.body.appendChild(fly);
 
-         if(sequences.every(s=>s.found>=3)){
-           document.getElementById('message').style.display='block';
-         }
+      let bRect = bucket.getBoundingClientRect();
+      setTimeout(()=>{
+        fly.style.transition = 'all 0.7s ease-in-out';
+        fly.style.left = (bRect.left + bRect.width/2) + 'px';
+        fly.style.top = (bRect.top) + 'px';
+        fly.style.transform = 'scale(0.5)';
+        fly.style.opacity = '0.5';
+      }, 10);
+      setTimeout(()=>fly.remove(), 800);
+
+      // Count important numbers
+      if(cell.important) cell.seq.found++;
+
+      bucket.innerText = `Found: ${sequences.filter(s=>s.found>=3).length}/6`;
+
+      if(sequences.every(s=>s.found>=3)){
+        document.getElementById('message').style.display='block';
+      }
     }
   });
 }
