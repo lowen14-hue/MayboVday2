@@ -74,19 +74,18 @@ function setup() {
     }
   }
 
-  // Place sequences
+  // Place sequences randomly across the grid
   sequences.forEach(seq=>{
-    let placed=false;
-    while(!placed){
-      let idx = floor(random(grid.length-3));
-      if(idx%cols <= cols-3){
-        for(let i=0;i<3;i++){
-          let cell = grid[idx+i];
-          cell.val = seq.digits[i];
-          cell.important = true;
-          cell.seq = seq;
+    for(let i=0;i<3;i++){
+      let placed=false;
+      while(!placed){
+        let idx = floor(random(grid.length));
+        if(!grid[idx].important){
+          grid[idx].val = seq.digits[i];
+          grid[idx].important = true;
+          grid[idx].seq = seq;
+          placed=true;
         }
-        placed=true;
       }
     }
   });
@@ -179,6 +178,11 @@ function mouseReleased() {
 
       // Count important numbers
       if(cell.important) cell.seq.found++;
+
+      // Replace picked cell with new random number
+      cell.val = floor(random(10));
+      cell.important = false;
+      cell.seq = null;
 
       bucket.innerText = `Found: ${sequences.filter(s=>s.found>=3).length}/6`;
 
