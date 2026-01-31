@@ -9,11 +9,11 @@
 body { margin:0; background:#001f4d; overflow:hidden; font-family: monospace; }
 #lumon-logo {
   position:absolute; top:10px; left:50%; transform:translateX(-50%);
-  font-size:32px; color:#fff; letter-spacing:4px; font-weight:bold; text-shadow:0 0 4px #0f0;
+  font-size:32px; color:#fff; letter-spacing:4px; font-weight:bold; text-shadow:0 0 4px #fff;
 }
 #bucket {
   position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
-  font-size:22px; color:#fff; text-shadow:0 0 4px #0f0;
+  font-size:22px; color:#fff; text-shadow:0 0 4px #fff;
 }
 #message {
   position:absolute; top:40%; left:50%; transform:translate(-50%, -50%);
@@ -21,14 +21,14 @@ body { margin:0; background:#001f4d; overflow:hidden; font-family: monospace; }
 }
 #complete {
   position:absolute; top:40%; left:50%; transform:translate(-50%, -50%);
-  font-size:32px; color:#0f0; display:none; text-align:center;
+  font-size:32px; color:#fff; display:none; text-align:center;
 }
 #progress-container {
   position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
-  width:60%; height:30px; border:2px solid #0f0; display:none;
+  width:60%; height:30px; border:2px solid #fff; display:none;
 }
 #progress-bar {
-  width:0%; height:100%; background:#0f0;
+  width:0%; height:100%; background:#fff;
 }
 canvas { display:block; }
 .fly-number {
@@ -46,7 +46,7 @@ canvas { display:block; }
 <div id="bucket">Found: 0/6</div>
 <div id="complete">Macrodata Refinement Complete</div>
 <div id="progress-container"><div id="progress-bar"></div></div>
-<div id="message">Makayla… will you be my Valentine! 💌</div>
+<div id="message">Maybo… will you be my Valentine! 💌</div>
 
 <script>
 // --- Variables ---
@@ -68,6 +68,9 @@ let dragStart = null;
 let dragEnd = null;
 
 let finished = false;
+
+// Floating drift offsets for cinematic feel
+let driftX = 0, driftY = 0;
 
 // --- Setup ---
 function setup() {
@@ -113,20 +116,24 @@ function setup() {
 
 // --- Draw ---
 function draw() {
-  if(finished) return; // stop drawing numbers after completion
+  if(finished) return;
   background('#001f4d');
 
   // scanlines
-  stroke(0,255,0,30);
+  stroke(255,255,255,30);
   for(let y=0;y<height;y+=4) line(0,y,width,y);
   noStroke();
 
   // selection box
   if(dragging && dragStart && dragEnd){
     noFill();
-    stroke(0,255,0);
+    stroke(255);
     rect(dragStart.x, dragStart.y, dragEnd.x-dragStart.x, dragEnd.y-dragStart.y);
   }
+
+  // cinematic floating drift
+  driftX = 5*sin(frameCount*0.01);
+  driftY = 5*sin(frameCount*0.008);
 
   // draw numbers
   grid.forEach(cell=>{
@@ -134,11 +141,11 @@ function draw() {
     cell.wiggleY = random(-1,1);
     cell.pulse = 1 + (cell.important ? 0.3*sin(frameCount*0.05) : 0);
 
-    let px = cell.baseX*cellW + cellW/2 + cell.wiggleX;
-    let py = cell.baseY*cellH + cellH/2 + cell.wiggleY;
+    let px = cell.baseX*cellW + cellW/2 + cell.wiggleX + driftX;
+    let py = cell.baseY*cellH + cellH/2 + cell.wiggleY + driftY;
     let size = (cell.important ? 36 : 28) * cell.pulse;
 
-    drawingContext.shadowColor = '#0f0';
+    drawingContext.shadowColor = '#fff';
     drawingContext.shadowBlur = random(2,4);
 
     fill(255);
