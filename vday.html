@@ -5,11 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>V-Day Severance Game</title>
 <style>
-/* --- GLOBAL STYLES --- */
 body {
     font-family: 'Courier New', Courier, monospace;
-    background-color: #1a1a1a;
-    color: #f5f5f5;
+    background-color: #111;
+    color: #0f0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -19,61 +18,61 @@ body {
 
 .container {
     text-align: center;
-    background-color: #2c2c2c;
+    background-color: #000;
     padding: 40px;
     border-radius: 12px;
-    box-shadow: 0 0 20px #ff4d6d;
-    max-width: 400px;
+    box-shadow: 0 0 30px #0f0;
+    max-width: 500px;
 }
 
 h1 {
+    color: #0f0;
     margin-bottom: 20px;
+    font-size: 28px;
+    letter-spacing: 2px;
+}
+
+p {
+    margin-bottom: 30px;
+}
+
+.number-grid {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.number {
+    font-size: 32px;
+    cursor: pointer;
+    transition: transform 0.3s, color 0.3s;
+}
+
+.number:hover {
+    transform: scale(2);
     color: #ff4d6d;
 }
 
-input {
-    padding: 10px;
-    font-size: 16px;
-    margin-top: 20px;
-    border-radius: 6px;
-    border: none;
-    width: 60%;
-}
-
-button {
-    padding: 10px 20px;
-    margin-left: 10px;
-    background-color: #ff4d6d;
-    border: none;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 6px;
-}
-
-button:hover {
-    background-color: #ff1a4d;
-}
-
 #message {
-    margin-top: 20px;
     min-height: 40px;
+    font-size: 18px;
+    color: #0f0;
 }
 </style>
 </head>
 <body>
 <div class="container">
     <h1>V-Day Number Game</h1>
-    <p id="message">Enter the first code to start...</p>
-    <input type="text" id="inputCode" placeholder="Enter code here">
-    <button id="submitBtn">Submit</button>
+    <p>Hover over the numbers to find the correct code.</p>
+    <div class="number-grid" id="numbers"></div>
+    <p id="message">Step 1: Find the first code.</p>
 </div>
 
 <script>
 // --- GAME DATA ---
-const codes = ["314", "271", "618"]; // Secret codes
+const codes = ["314", "271", "618"]; // Correct codes
 const messages = [
-    "Good. You're awake. Now, enter the next code.",
+    "Good. You're awake. Now, find the next code.",
     "You're on the right track. One more to go...",
     "Almost there. Last code!"
 ];
@@ -81,29 +80,45 @@ const finalMessage = "Makayla… will you be my Valentine? 💌";
 
 let step = 0;
 
-// --- DOM ELEMENTS ---
-const input = document.getElementById("inputCode");
-const btn = document.getElementById("submitBtn");
-const message = document.getElementById("message");
+// --- NUMBERS TO DISPLAY ---
+function generateNumbers() {
+    const grid = document.getElementById("numbers");
+    grid.innerHTML = "";
+    // Add random distractor numbers + the correct code
+    let nums = [];
+    for(let i=0; i<4; i++){
+        nums.push(Math.floor(Math.random()*900 + 100).toString());
+    }
+    // Replace a random number with the correct code
+    const correctIndex = Math.floor(Math.random()*4);
+    nums[correctIndex] = codes[step];
+    nums.forEach(num => {
+        const span = document.createElement("span");
+        span.textContent = num;
+        span.classList.add("number");
+        span.addEventListener("click", () => checkCode(num));
+        grid.appendChild(span);
+    });
+}
 
-// --- EVENT LISTENER ---
-btn.addEventListener("click", () => {
-    const code = input.value.trim();
-    if(code === codes[step]) {
+function checkCode(num) {
+    const message = document.getElementById("message");
+    if(num === codes[step]) {
         if(step < codes.length - 1){
             message.textContent = messages[step];
             step++;
-            input.value = "";
+            generateNumbers();
         } else {
             message.textContent = finalMessage;
-            input.style.display = "none";
-            btn.style.display = "none";
+            document.getElementById("numbers").style.display = "none";
         }
     } else {
         message.textContent = "Incorrect. Try again.";
-        input.value = "";
     }
-});
+}
+
+// --- INIT ---
+generateNumbers();
 </script>
 </body>
 </html>
