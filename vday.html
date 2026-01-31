@@ -19,6 +19,17 @@ body { margin:0; background:#001f4d; overflow:hidden; font-family: monospace; }
   position:absolute; top:40%; left:50%; transform:translate(-50%, -50%);
   font-size:32px; color:#ff4d6d; display:none; text-align:center;
 }
+#complete {
+  position:absolute; top:40%; left:50%; transform:translate(-50%, -50%);
+  font-size:32px; color:#0f0; display:none; text-align:center;
+}
+#progress-container {
+  position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
+  width:60%; height:30px; border:2px solid #0f0; display:none;
+}
+#progress-bar {
+  width:0%; height:100%; background:#0f0;
+}
 canvas { display:block; }
 .fly-number {
   position:absolute;
@@ -33,10 +44,12 @@ canvas { display:block; }
 
 <div id="lumon-logo">LUMON</div>
 <div id="bucket">Found: 0/6</div>
+<div id="complete">Macrodata Refinement Complete</div>
+<div id="progress-container"><div id="progress-bar"></div></div>
 <div id="message">Makayla… will you be my Valentine! 💌</div>
 
 <script>
-// --- Macrodata-inspired variables ---
+// --- Variables ---
 const sequences = [
   {digits:['0','9','2'], found:0},
   {digits:['1','1','8'], found:0},
@@ -54,6 +67,9 @@ let dragging = false;
 let dragStart = null;
 let dragEnd = null;
 
+let finished = false;
+
+// --- Setup ---
 function setup() {
   createCanvas(windowWidth, windowHeight);
   textAlign(CENTER,CENTER);
@@ -61,7 +77,7 @@ function setup() {
   cellW = width / cols;
   cellH = height / rows;
 
-  // Create grid
+  // Create full grid
   for(let y=0;y<rows;y++){
     for(let x=0;x<cols;x++){
       grid.push({
@@ -74,16 +90,20 @@ function setup() {
     }
   }
 
-  // Place sequences randomly across the grid
+  // Place sequences across the grid horizontally
   sequences.forEach(seq=>{
-    for(let i=0;i<3;i++){
-      let placed=false;
-      while(!placed){
-        let idx = floor(random(grid.length));
-        if(!grid[idx].important){
-          grid[idx].val = seq.digits[i];
-          grid[idx].important = true;
-          grid[idx].seq = seq;
+    let placed=false;
+    while(!placed){
+      let idx = floor(random(grid.length-3));
+      if(idx%cols <= cols-3){
+        // Ensure no overlap with previous sequences
+        if(!grid[idx].important && !grid[idx+1].important && !grid[idx+2].important){
+          for(let i=0;i<3;i++){
+            let cell = grid[idx+i];
+            cell.val = seq.digits[i];
+            cell.important = true;
+            cell.seq = seq;
+          }
           placed=true;
         }
       }
@@ -91,7 +111,9 @@ function setup() {
   });
 }
 
+// --- Draw ---
 function draw() {
+  if(finished) return; // stop drawing numbers after completion
   background('#001f4d');
 
   // scanlines
@@ -129,7 +151,9 @@ function draw() {
   });
 }
 
+// --- Mouse events ---
 function mousePressed() {
+  if(finished) return;
   dragging = true;
   dragStart = createVector(mouseX, mouseY);
   dragEnd = dragStart.copy();
@@ -140,6 +164,7 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
+  if(finished) return;
   dragging = false;
   dragEnd = createVector(mouseX, mouseY);
 
@@ -179,18 +204,46 @@ function mouseReleased() {
       // Count important numbers
       if(cell.important) cell.seq.found++;
 
-      // Replace picked cell with new random number
+      // Replace picked cell with random number
       cell.val = floor(random(10));
       cell.important = false;
       cell.seq = null;
 
       bucket.innerText = `Found: ${sequences.filter(s=>s.found>=3).length}/6`;
 
+      // Check for completion
       if(sequences.every(s=>s.found>=3)){
-        document.getElementById('message').style.display='block';
+        completeMacrodata();
       }
     }
   });
+}
+
+// --- Completion function ---
+function completeMacrodata(){
+  finished = true;
+  // Hide canvas & bucket
+  select('canvas').hide();
+  document.getElementById('bucket').style.display='none';
+  
+  // Show complete message & progress bar
+  let completeMsg = document.getElementById('complete');
+  let progressContainer = document.getElementById('progress-container');
+  completeMsg.style.display='block';
+  progressContainer.style.display='block';
+  
+  let progress = 0;
+  let progressBar = document.getElementById('progress-bar');
+  let interval = setInterval(()=>{
+    progress += 2;
+    progressBar.style.width = progress + '%';
+    if(progress>=100){
+      clearInterval(interval);
+      progressContainer.style.display='none';
+      completeMsg.style.display='none';
+      document.getElementById('message').style.display='block';
+    }
+  },50);
 }
 </script>
 </body>
