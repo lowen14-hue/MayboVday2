@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Severance Valentine</title>
+<style>
+/* --- GLOBAL STYLES --- */
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #1a1a1a;
+    color: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    text-align: center;
+    background-color: #2c2c2c;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px #ff4d6d;
+    max-width: 400px;
+}
+
+h1 {
+    margin-bottom: 20px;
+    color: #ff4d6d;
+}
+
+input {
+    padding: 10px;
+    font-size: 16px;
+    margin-top: 20px;
+    border-radius: 6px;
+    border: none;
+    width: 60%;
+}
+
+button {
+    padding: 10px 20px;
+    margin-left: 10px;
+    background-color: #ff4d6d;
+    border: none;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+button:hover {
+    background-color: #ff1a4d;
+}
+
+#message {
+    margin-top: 20px;
+    min-height: 40px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Welcome to the Number Game</h1>
+    <p id="message">Enter the first code to start...</p>
+    <input type="text" id="inputCode" placeholder="Enter code here">
+    <button id="submitBtn">Submit</button>
+</div>
+
+<script>
+// --- GAME DATA ---
+const codes = ["314", "271", "618"]; // Secret codes
+const messages = [
+    "Good. You're awake. Now, enter the next code.",
+    "You're on the right track. One more to go...",
+    "Almost there. Last code!"
+];
+const finalMessage = "Makayla… will you be my Valentine? 💌";
+
+let step = 0;
+
+// --- DOM ELEMENTS ---
+const input = document.getElementById("inputCode");
+const btn = document.getElementById("submitBtn");
+const message = document.getElementById("message");
+
+// --- EVENT LISTENER ---
+btn.addEventListener("click", () => {
+    const code = input.value.trim();
+    if(code === codes[step]) {
+        if(step < codes.length - 1){
+            message.textContent = messages[step];
+            step++;
+            input.value = "";
+        } else {
+            message.textContent = finalMessage;
+            input.style.display = "none";
+            btn.style.display = "none";
+        }
+    } else {
+        message.textContent = "Incorrect. Try again.";
+        input.value = "";
+    }
+});
+</script>
+</body>
+</html>
