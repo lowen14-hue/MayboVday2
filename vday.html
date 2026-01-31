@@ -9,11 +9,11 @@
 body { margin:0; background:#001f4d; overflow:hidden; font-family: monospace; }
 #lumon-logo {
   position:absolute; top:10px; left:50%; transform:translateX(-50%);
-  font-size:32px; color:#fff; letter-spacing:4px; font-weight:bold; text-shadow:0 0 4px #fff;
+  font-size:32px; color:#fff; letter-spacing:4px; font-weight:bold; text-shadow:0 0 6px #fff;
 }
 #bucket {
   position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
-  font-size:22px; color:#fff; text-shadow:0 0 4px #fff;
+  font-size:22px; color:#fff; text-shadow:0 0 6px #fff;
 }
 #message {
   position:absolute; top:40%; left:50%; transform:translate(-50%, -50%);
@@ -49,7 +49,6 @@ canvas { display:block; }
 <div id="message">Maybo… will you be my Valentine! 💌</div>
 
 <script>
-// --- Variables ---
 const sequences = [
   {digits:['0','9','2'], found:0},
   {digits:['1','1','8'], found:0},
@@ -69,11 +68,10 @@ let dragEnd = null;
 
 let finished = false;
 
-// Floating drift offsets for cinematic feel
 let driftX = 0, driftY = 0;
 
-// Flicker overlay
-let flickerOpacity = 0.05;
+// Subtle CRT flicker
+let flicker = 0;
 
 // --- Setup ---
 function setup() {
@@ -83,7 +81,6 @@ function setup() {
   cellW = width / cols;
   cellH = height / rows;
 
-  // Create full grid
   for(let y=0;y<rows;y++){
     for(let x=0;x<cols;x++){
       grid.push({
@@ -96,7 +93,6 @@ function setup() {
     }
   }
 
-  // Place sequences across the grid horizontally
   sequences.forEach(seq=>{
     let placed=false;
     while(!placed){
@@ -120,16 +116,16 @@ function setup() {
 function draw() {
   if(finished) return;
 
-  // Flicker effect
-  flickerOpacity = random(0.03,0.08);
+  // subtle flicker
+  flicker = 0.02 + 0.03*sin(frameCount*0.1);
   background('#001f4d');
-  fill(255,255,255,flickerOpacity*255);
+  fill(255,255,255,flicker*255);
   noStroke();
   rect(0,0,width,height);
 
-  // scanlines
-  stroke(255,255,255,20 + flickerOpacity*100);
-  for(let y=0;y<height;y+=4) line(0,y,width,y);
+  // CRT scanlines
+  stroke(255, 255, 255, 15);
+  for(let y=0;y<height;y+=3) line(0,y,width,y);
   noStroke();
 
   // selection box
@@ -140,14 +136,13 @@ function draw() {
   }
 
   // cinematic floating drift
-  driftX = 5*sin(frameCount*0.01);
-  driftY = 5*sin(frameCount*0.008);
+  driftX = 3*sin(frameCount*0.01);
+  driftY = 3*sin(frameCount*0.008);
 
-  // draw numbers
   grid.forEach(cell=>{
-    cell.wiggleX = random(-1,1);
-    cell.wiggleY = random(-1,1);
-    cell.pulse = 1 + (cell.important ? 0.3*sin(frameCount*0.05) : 0);
+    cell.wiggleX = random(-0.5,0.5);
+    cell.wiggleY = random(-0.5,0.5);
+    cell.pulse = 1 + (cell.important ? 0.25*sin(frameCount*0.05) : 0);
 
     let px = cell.baseX*cellW + cellW/2 + cell.wiggleX + driftX;
     let py = cell.baseY*cellH + cellH/2 + cell.wiggleY + driftY;
@@ -164,6 +159,11 @@ function draw() {
     cell.screenY = py;
     cell.screenSize = size;
   });
+
+  // subtle vignette/glow
+  noFill();
+  stroke(255,5);
+  rect(0,0,width,height);
 }
 
 // --- Mouse events ---
@@ -197,7 +197,6 @@ function mouseReleased() {
 
       cell.picked = true;
 
-      // Animate flying number
       let fly = document.createElement('div');
       fly.className = 'fly-number';
       fly.innerText = cell.val;
@@ -216,17 +215,14 @@ function mouseReleased() {
       }, 10);
       setTimeout(()=>fly.remove(), 800);
 
-      // Count important numbers
       if(cell.important) cell.seq.found++;
 
-      // Replace picked cell with random number
       cell.val = floor(random(10));
       cell.important = false;
       cell.seq = null;
 
       bucket.innerText = `Found: ${sequences.filter(s=>s.found>=3).length}/6`;
 
-      // Check for completion
       if(sequences.every(s=>s.found>=3)){
         completeMacrodata();
       }
@@ -234,14 +230,12 @@ function mouseReleased() {
   });
 }
 
-// --- Completion function ---
+// --- Completion ---
 function completeMacrodata(){
   finished = true;
-  // Hide canvas & bucket
   select('canvas').hide();
   document.getElementById('bucket').style.display='none';
   
-  // Show complete message & progress bar
   let completeMsg = document.getElementById('complete');
   let progressContainer = document.getElementById('progress-container');
   completeMsg.style.display='block';
