@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Severance V-Day Macrodata</title>
+<title>Severance V‑Day Macrodata</title>
 <style>
 body {
     margin: 0;
     font-family: monospace;
-    background: #001f4d; /* dark blue background */
+    background: #001f4d; /* deep blue */
     overflow: hidden;
+    color: #fff;
 }
 
 #grid {
@@ -27,35 +28,28 @@ body {
     justify-content: center;
     align-items: center;
     font-size: 28px;
-    color: #fff;
     user-select: none;
-    position: relative;
-    text-shadow: 0 0 2px #0f0, 0 0 4px #0f0;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.15s; /* hover enlarge */
+    color: #fff;
 }
 
-/* Hover effect: grow numbers */
-.cell.correct:hover {
-    transform: scale(1.5);
+.cell:hover {
+    transform: scale(1.4); /* subtle growth on hover */
 }
 
-/* Bucket */
 #bucket {
     position: fixed;
     bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    color: #fff;
     font-size: 22px;
     font-weight: bold;
-    text-shadow: 0 0 4px #0f0;
 }
 
-/* Final message */
 #message {
     position: fixed;
-    top: 40%;
+    top: 42%;
     left: 50%;
     transform: translateX(-50%);
     font-size: 32px;
@@ -72,7 +66,7 @@ body {
 <div id="message">Makayla… will you be my Valentine! 💌</div>
 
 <script>
-// --- Data: each word = 3-digit sequence ---
+// Hidden sequences (3 digits per word)
 const codes = [
     {digits:["0","9","2"], word:"Makayla,"},
     {digits:["1","1","8"], word:"will"},
@@ -86,59 +80,55 @@ const rows = 10;
 const cols = 25;
 let found = [];
 
-// --- Generate grid ---
+// Build grid
 const grid = document.getElementById("grid");
 let cells = [];
-
-for(let r=0; r<rows; r++){
-    for(let c=0; c<cols; c++){
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        cell.textContent = Math.floor(Math.random()*10);
-        grid.appendChild(cell);
-        cells.push(cell);
-        // drifting params
-        cell.dataset.dx = (Math.random()*2-1)*0.3;
-        cell.dataset.dy = (Math.random()*2-1)*0.3;
-        cell.dataset.x = 0;
-        cell.dataset.y = 0;
-    }
+for(let i=0; i<rows*cols; i++){
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.textContent = Math.floor(Math.random()*10); // random digit
+    grid.appendChild(cell);
+    cells.push(cell);
+    // drifting motion setup
+    cell.dataset.dx = (Math.random()*2-1)*0.3;
+    cell.dataset.dy = (Math.random()*2-1)*0.3;
+    cell.dataset.x = 0;
+    cell.dataset.y = 0;
 }
 
-// --- Place codes horizontally ---
+// Place each 3-digit code horizontally
 codes.forEach(codeObj => {
-    let placed = false;
+    let placed=false;
     while(!placed){
-        const startIdx = Math.floor(Math.random() * (cells.length - 3));
-        const colStart = startIdx % cols;
-        if(colStart <= cols - 3){ // fits horizontally
-            for(let i=0; i<3; i++){
-                cells[startIdx+i].textContent = codeObj.digits[i];
-                cells[startIdx+i].dataset.code = codeObj.word;
-                cells[startIdx+i].dataset.part = i;
-                cells[startIdx+i].classList.add("correct");
+        const start = Math.floor(Math.random() * (cells.length-3));
+        const colStart = start % cols;
+        if(colStart <= cols - 3){
+            for(let i=0;i<3;i++){
+                let c = cells[start+i];
+                c.textContent = codeObj.digits[i];
+                c.dataset.code = codeObj.word;
+                c.classList.add("correct");
             }
             placed = true;
         }
     }
 });
 
-// --- Track word progress ---
-let wordProgress = {};
-codes.forEach(c=>wordProgress[c.word] = 0);
+// Track progress
+let progress = {};
+codes.forEach(c=>progress[c.word]=0);
 
-// --- Animate drift + subtle flicker ---
-function animateGrid(){
+// Animate drifting and flicker
+function animate(){
     cells.forEach(cell=>{
-        // drift
-        let x = parseFloat(cell.dataset.x);
-        let y = parseFloat(cell.dataset.y);
-        let dx = parseFloat(cell.dataset.dx);
-        let dy = parseFloat(cell.dataset.dy);
+        let x = +cell.dataset.x;
+        let y = +cell.dataset.y;
+        let dx = +cell.dataset.dx;
+        let dy = +cell.dataset.dy;
 
-        if(Math.abs(x+dx) > 2) dx = -dx;
-        if(Math.abs(y+dy) > 2) dy = -dy;
-
+        // bounce back
+        if(Math.abs(x+dx)>2) dx=-dx;
+        if(Math.abs(y+dy)>2) dy=-dy;
         x += dx;
         y += dy;
         cell.dataset.x = x;
@@ -146,54 +136,51 @@ function animateGrid(){
         cell.dataset.dx = dx;
         cell.dataset.dy = dy;
 
-        // flicker/glow
-        const glow = Math.random()*2 + 2;
+        // subtle green glow flicker
+        const glow = Math.random()*2+2;
         cell.style.textShadow = `0 0 ${glow}px #0f0, 0 0 ${glow*2}px #0f0`;
 
         cell.style.transform = `translate(${x}px, ${y}px)`;
     });
-    requestAnimationFrame(animateGrid);
+    requestAnimationFrame(animate);
 }
-animateGrid();
+animate();
 
-// --- Click handler with flying animation ---
+// Click to bucket animation
 const bucket = document.getElementById("bucket");
 grid.addEventListener("click", e=>{
     if(e.target.classList.contains("correct")){
-        const word = e.target.dataset.code;
-        if(wordProgress[word] < 3){
-            wordProgress[word]++;
-            // Animate clone to bucket
+        const w = e.target.dataset.code;
+        if(progress[w] < 3){
+            progress[w]++;
+            // flying animation
             const rect = e.target.getBoundingClientRect();
-            const bucketRect = bucket.getBoundingClientRect();
+            const bRect = bucket.getBoundingClientRect();
             const clone = e.target.cloneNode(true);
             clone.style.position = "fixed";
             clone.style.left = rect.left+"px";
             clone.style.top = rect.top+"px";
-            clone.style.transform = "none";
-            clone.style.transition = "all 0.8s ease-in-out";
+            clone.style.transition = "all 0.7s ease-in-out";
             document.body.appendChild(clone);
             setTimeout(()=>{
-                clone.style.left = bucketRect.left + bucketRect.width/2 + "px";
-                clone.style.top = bucketRect.top + "px";
-                clone.style.transform = "scale(0.5)";
+                clone.style.left = bRect.left + bRect.width/2 + "px";
+                clone.style.top = bRect.top + "px";
+                clone.style.transform = "scale(0.6)";
                 clone.style.opacity = "0.5";
             },10);
-            setTimeout(()=>{clone.remove();},900);
+            setTimeout(()=>clone.remove(),800);
         }
+        e.target.style.pointerEvents="none"; // prevent double-click
 
-        // mark as clicked
-        e.target.style.pointerEvents = "none";
-
-        // Check if word completed
-        if(wordProgress[word] === 3 && !found.includes(word)){
-            found.push(word);
+        // update bucket count
+        if(progress[w]===3 && !found.includes(w)){
+            found.push(w);
             bucket.textContent = `Found: ${found.length}/6`;
         }
 
-        // Check if all found
-        if(found.length === codes.length){
-            document.getElementById("message").style.display = "block";
+        // reveal final message
+        if(found.length===codes.length){
+            document.getElementById("message").style.display="block";
         }
     }
 });
