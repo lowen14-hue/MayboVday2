@@ -3,103 +3,112 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Severance V‑Day Message</title>
+<title>Severance V-Day Number Search</title>
 <style>
-
-/* Basic reset + body look */
 body {
     margin: 0;
     font-family: "Courier New", monospace;
     background: #000;
     color: #0f0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    overflow: hidden;
+}
+
+#screen {
+    position: relative;
+    width: 100vw;
     height: 100vh;
 }
 
-/* Container */
-#screen {
-    background: #000;
-    border: 3px solid #0f0;
-    padding: 30px;
-    max-width: 800px;
-    text-align: center;
-}
-
-/* Message text */
-#revealedText {
-    font-size: 24px;
-    letter-spacing: 2px;
-    margin-bottom: 20px;
-}
-
-/* Code blocks like screen data */
-.codeGroup {
-    display: inline-block;
-    margin: 10px;
-    font-size: 28px;
-    padding: 12px 18px;
-    border: 1px solid #0f0;
-    transition: 0.3s ease;
+.number {
+    position: absolute;
+    font-size: 16px;
     cursor: pointer;
+    transition: transform 0.3s, color 0.3s;
 }
 
-/* Hover effect similar to Lumon data glow */
-.codeGroup:hover {
-    transform: scale(1.8);
+.number:hover {
+    transform: scale(1.5);
     color: #ff4d6d;
-    border-color: #ff4d6d;
 }
 
+#bucket {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #0f0;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+#message {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 32px;
+    display: none;
+    text-align: center;
+    color: #ff4d6d;
+}
 </style>
 </head>
 <body>
-
-<div id="screen">
-    <div id="revealedText">Hover each group to reveal the message...</div>
-    <div id="codes"></div>
-</div>
+<div id="screen"></div>
+<div id="bucket">Found: </div>
+<div id="message">Makayla… will you be my Valentine? 💌</div>
 
 <script>
-// This array of objects defines:
-// "code": the random-style numeric label shown initially
-// "word": the actual word of your message
-const sequence = [
-    {code:"092", word:"Makayla,"},
-    {code:"118", word:"will"},
-    {code:"205", word:"you"},
-    {code:"402", word:"be"},
-    {code:"319", word:"my"},
-    {code:"583", word:"Valentine?"}
+// --- GAME DATA ---
+const codes = [
+    {code: "092", word: "Makayla,"},
+    {code: "118", word: "will"},
+    {code: "205", word: "you"},
+    {code: "402", word: "be"},
+    {code: "319", word: "my"},
+    {code: "583", word: "Valentine?"}
 ];
 
-let current = 0;
+let found = [];
 
-// render codes initially
-const container = document.getElementById("codes");
-sequence.forEach((item, index) => {
+// --- GENERATE RANDOM NUMBERS ---
+const screen = document.getElementById("screen");
+for(let i=0; i<300; i++){ // total random numbers on screen
     const span = document.createElement("span");
-    span.textContent = item.code;
-    span.className = "codeGroup";
-    span.dataset.index = index;
-    container.appendChild(span);
-});
+    span.classList.add("number");
+    // Random 3-digit number
+    let num = Math.floor(Math.random()*900 + 100).toString();
 
-// update revealed text when hovered
-container.addEventListener("mouseover", (e) => {
-    if (e.target.classList.contains("codeGroup")) {
-        const idx = parseInt(e.target.dataset.index);
-        document.getElementById("revealedText").textContent = sequence[idx].word;
+    // Randomly insert a code from the hidden list
+    if(Math.random() < 0.02 && codes.length > 0){ // ~2% chance per number
+        const idx = Math.floor(Math.random()*codes.length);
+        num = codes[idx].code;
+    }
+
+    span.textContent = num;
+    span.style.top = Math.random() * (window.innerHeight - 20) + "px";
+    span.style.left = Math.random() * (window.innerWidth - 50) + "px";
+    span.dataset.code = num;
+    screen.appendChild(span);
+}
+
+// --- CLICK HANDLER ---
+screen.addEventListener("click", (e)=>{
+    if(e.target.classList.contains("number")){
+        const code = e.target.dataset.code;
+        const idx = codes.findIndex(c => c.code === code);
+        if(idx !== -1 && !found.includes(code)){
+            found.push(code);
+            document.getElementById("bucket").textContent = "Found: " + found.length + "/6";
+            e.target.style.color = "#ff4d6d";
+            e.target.style.fontWeight = "bold";
+            // Check if all found
+            if(found.length === codes.length){
+                document.getElementById("message").style.display = "block";
+            }
+        }
     }
 });
-
-// Optional: clear text when not hovering
-container.addEventListener("mouseout", (e) => {
-    document.getElementById("revealedText").textContent = "";
-});
 </script>
-
 </body>
 </html>
