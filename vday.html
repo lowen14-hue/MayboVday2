@@ -7,6 +7,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
 <style>
 body { margin:0; background:#001f4d; overflow:hidden; font-family: monospace; }
+#lumon-logo {
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  font-size:32px; color:#fff; letter-spacing:4px; font-weight:bold; text-shadow:0 0 4px #0f0;
+}
 #bucket {
   position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
   font-size:22px; color:#fff; text-shadow:0 0 4px #0f0;
@@ -15,14 +19,17 @@ body { margin:0; background:#001f4d; overflow:hidden; font-family: monospace; }
   position:absolute; top:40%; left:50%; transform:translate(-50%, -50%);
   font-size:32px; color:#ff4d6d; display:none; text-align:center;
 }
+canvas { display:block; }
 </style>
 </head>
 <body>
+
+<div id="lumon-logo">LUMON</div>
 <div id="bucket">Found: 0/6</div>
 <div id="message">Makayla… will you be my Valentine! 💌</div>
 
 <script>
-// === Macrodata-Inspired Variables ===
+// === Macrodata-inspired variables ===
 const sequences = [
   {digits:['0','9','2'], found:0},
   {digits:['1','1','8'], found:0},
@@ -43,40 +50,36 @@ let dragEnd = null;
 function setup() {
   createCanvas(windowWidth, windowHeight);
   textAlign(CENTER,CENTER);
-  textSize(28);
-  fill(255);
 
   cellW = width / cols;
   cellH = height / rows;
 
-  // Create grid of numbers
+  // Create numbers grid
   for(let y=0;y<rows;y++){
     for(let x=0;x<cols;x++){
       grid.push({
         baseX:x, baseY:y,
-        dx:random(-1,1), dy:random(-1,1),
+        wiggleX:0, wiggleY:0,
         val:floor(random(10)),
-        important:false,
-        picked:false,
-        wiggleOffsetX:0,
-        wiggleOffsetY:0
+        important:false, picked:false,
+        pulse:0
       });
     }
   }
 
   // Place important sequences horizontally
   sequences.forEach(seq=>{
-    let placed = false;
+    let placed=false;
     while(!placed){
       let idx = floor(random(grid.length-3));
-      if((idx%cols) <= (cols-3)){
+      if(idx%cols <= cols-3){
         for(let i=0;i<3;i++){
           let cell = grid[idx+i];
           cell.val = seq.digits[i];
           cell.important = true;
           cell.seq = seq;
         }
-        placed = true;
+        placed=true;
       }
     }
   });
@@ -85,33 +88,38 @@ function setup() {
 function draw() {
   background('#001f4d');
 
-  // Draw selection rectangle if dragging
+  // Draw subtle scanlines
+  stroke(0,255,0,30);
+  for(let y=0;y<height;y+=4) line(0,y,width,y);
+  noStroke();
+
+  // Draw selection box
   if(dragging && dragStart && dragEnd){
     noFill();
     stroke(0,255,0);
-    rect(dragStart.x, dragStart.y, dragEnd.x - dragStart.x, dragEnd.y - dragStart.y);
+    rect(dragStart.x, dragStart.y, dragEnd.x-dragStart.x, dragEnd.y-dragStart.y);
   }
 
   // Draw numbers
   grid.forEach(cell=>{
     // Wiggle in place
-    cell.wiggleOffsetX += cell.dx * 0.2;
-    cell.wiggleOffsetY += cell.dy * 0.2;
+    cell.wiggleX = random(-1,1);
+    cell.wiggleY = random(-1,1);
+    cell.pulse = 1 + (cell.important ? 0.3*sin(frameCount*0.05) : 0);
 
-    let px = cell.baseX*cellW + cellW/2 + cell.wiggleOffsetX;
-    let py = cell.baseY*cellH + cellH/2 + cell.wiggleOffsetY;
+    let px = cell.baseX*cellW + cellW/2 + cell.wiggleX;
+    let py = cell.baseY*cellH + cellH/2 + cell.wiggleY;
 
-    // Important numbers bigger
-    let size = cell.important ? 36 : 28;
+    let size = (cell.important ? 36 : 28) * cell.pulse;
 
-    // Green flicker glow
-    let glow = random(2,4);
+    // Glow/flicker
     drawingContext.shadowColor = '#0f0';
-    drawingContext.shadowBlur = glow;
+    drawingContext.shadowBlur = random(2,4);
 
     fill(255);
     textSize(size);
     text(cell.val, px, py);
+
     cell.screenX = px;
     cell.screenY = py;
     cell.screenSize = size;
@@ -132,7 +140,6 @@ function mouseReleased() {
   dragging = false;
   dragEnd = createVector(mouseX, mouseY);
 
-  // Check which cells are inside the drag box
   let x1 = min(dragStart.x, dragEnd.x);
   let x2 = max(dragStart.x, dragEnd.x);
   let y1 = min(dragStart.y, dragEnd.y);
@@ -141,15 +148,21 @@ function mouseReleased() {
   let bucket = document.getElementById('bucket');
 
   grid.forEach(cell=>{
-    if(!cell.picked && cell.important &&
-       cell.screenX >= x1 && cell.screenX <= x2 &&
-       cell.screenY >= y1 && cell.screenY <= y2){
+    // Capture any number in the box
+    if(!cell.picked &&
+       cell.screenX>=x1 && cell.screenX<=x2 &&
+       cell.screenY>=y1 && cell.screenY<=y2){
          cell.picked = true;
-         cell.seq.found++;
-         bucket.innerText = `Found: ${sequences.filter(s=>s.found===3).length}/6`;
 
-         if(sequences.every(s=>s.found===3)){
-           document.getElementById('message').style.display = 'block';
+         // If important, count progress
+         if(cell.important){
+           cell.seq.found++;
+         }
+
+         bucket.innerText = `Found: ${sequences.filter(s=>s.found>=3).length}/6`;
+
+         if(sequences.every(s=>s.found>=3)){
+           document.getElementById('message').style.display='block';
          }
     }
   });
