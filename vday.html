@@ -1,162 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Lumon Industries - VDay Macrodata</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1,width=device-width">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-    <style>
-        body { margin: 0; background: #001f4d; overflow: hidden; font-family: monospace; }
-        #bucket {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #fff;
-            font-size: 22px;
-            font-weight: bold;
-            text-shadow: 0 0 4px #0f0;
-        }
-        #message {
-            position: absolute;
-            top: 40%;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #ff4d6d;
-            font-size: 32px;
-            display: none;
-            text-align: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V-Day Macrodata Refinement</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<style>
+body { margin:0; overflow:hidden; background:#001f4d; font-family: monospace; }
+#bucket {
+  position: absolute; bottom:10px; left:50%; transform:translateX(-50%);
+  font-size:22px; font-weight:bold; color:#fff; text-shadow:0 0 4px #0f0;
+}
+#message {
+  position:absolute; top:40%; left:50%; transform:translateX(-50%);
+  font-size:32px; color:#ff4d6d; display:none; text-align:center;
+}
+</style>
 </head>
 <body>
 <div id="bucket">Found: 0/6</div>
 <div id="message">Makayla… will you be my Valentine! 💌</div>
 
 <script>
-// --- Your secret message sequences ---
+// Macrodata-style sequences
 const codes = [
-    {digits:["0","9","2"], word:"Makayla,"},
-    {digits:["1","1","8"], word:"will"},
-    {digits:["2","0","5"], word:"you"},
-    {digits:["4","0","2"], word:"be"},
-    {digits:["3","1","9"], word:"my"},
-    {digits:["5","8","3"], word:"Valentine?"}
+  {digits:["0","9","2"], word:"Makayla,"},
+  {digits:["1","1","8"], word:"will"},
+  {digits:["2","0","5"], word:"you"},
+  {digits:["4","0","2"], word:"be"},
+  {digits:["3","1","9"], word:"my"},
+  {digits:["5","8","3"], word:"Valentine?"}
 ];
 
-let grid = [];
-let rows = 20;
-let cols = 30;
-let cellSizeX, cellSizeY;
-let found = [];
-let progress = {};
+let grid = [], found = [], progress = {};
+const rows = 20, cols = 30;
+let cellWidth, cellHeight;
 
-codes.forEach(c => progress[c.word] = 0);
+codes.forEach(c=>progress[c.word]=0);
 
 function setup() {
-    createCanvas(windowWidth, windowHeight);
-    textAlign(CENTER, CENTER);
-    textSize(28);
-    fill(255);
-    noStroke();
-    
-    cellSizeX = width / cols;
-    cellSizeY = height / rows;
-    
-    // Create grid of cells
-    for (let y = 0; y < rows; y++){
-        for (let x = 0; x < cols; x++){
-            let cell = {
-                x: x,
-                y: y,
-                dx: random(-0.3,0.3),
-                dy: random(-0.3,0.3),
-                val: floor(random(10)),
-                correct: false
-            };
-            grid.push(cell);
-        }
+  createCanvas(windowWidth, windowHeight);
+  textAlign(CENTER,CENTER);
+  textSize(28);
+  fill(255);
+  
+  cellWidth = width/cols;
+  cellHeight = height/rows;
+  
+  // Create grid
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
+      grid.push({
+        x:x, y:y,
+        dx:random(-0.2,0.2),
+        dy:random(-0.2,0.2),
+        val:floor(random(10)),
+        correct:false
+      });
     }
-    
-    // Place codes horizontally
-    codes.forEach(codeObj => {
-        let placed = false;
-        while(!placed){
-            let idx = floor(random(grid.length-3));
-            let colStart = idx % cols;
-            if(colStart <= cols-3){
-                for(let i=0;i<3;i++){
-                    let c = grid[idx+i];
-                    c.val = codeObj.digits[i];
-                    c.correct = true;
-                    c.word = codeObj.word;
-                }
-                placed = true;
-            }
+  }
+  
+  // Place codes horizontally
+  codes.forEach(codeObj=>{
+    let placed=false;
+    while(!placed){
+      let idx = floor(random(grid.length-3));
+      let colStart = idx%cols;
+      if(colStart <= cols-3){
+        for(let i=0;i<3;i++){
+          let c = grid[idx+i];
+          c.val = codeObj.digits[i];
+          c.correct = true;
+          c.word = codeObj.word;
         }
-    });
+        placed = true;
+      }
+    }
+  });
 }
 
 function draw() {
-    background('#001f4d');
-    for (let cell of grid){
-        // Drift
-        cell.x += cell.dx;
-        cell.y += cell.dy;
-        if(cell.x<0 || cell.x>cols-1) cell.dx*=-1;
-        if(cell.y<0 || cell.y>rows-1) cell.dy*=-1;
-        
-        let px = cell.x*cellSizeX + cellSizeX/2;
-        let py = cell.y*cellSizeY + cellSizeY/2;
-        
-        // Glow/flicker
-        let glow = random(2,4);
-        drawingContext.shadowColor = '#0f0';
-        drawingContext.shadowBlur = glow;
-        
-        text(cell.val, px, py);
-    }
+  background('#001f4d');
+  for(let cell of grid){
+    // drift
+    cell.x += cell.dx;
+    cell.y += cell.dy;
+    if(cell.x<0 || cell.x>cols-1) cell.dx*=-1;
+    if(cell.y<0 || cell.y>rows-1) cell.dy*=-1;
+    
+    let px = cell.x*cellWidth + cellWidth/2;
+    let py = cell.y*cellHeight + cellHeight/2;
+    
+    // flicker glow
+    let glow = random(2,4);
+    drawingContext.shadowColor = '#0f0';
+    drawingContext.shadowBlur = glow;
+    
+    text(cell.val, px, py);
+  }
 }
 
 function mousePressed() {
-    let bucket = document.getElementById("bucket");
-    for (let cell of grid){
-        let px = cell.x*cellSizeX + cellSizeX/2;
-        let py = cell.y*cellSizeY + cellSizeY/2;
-        if(cell.correct){
-            if(dist(mouseX,mouseY,px,py)<cellSizeX/2){
-                progress[cell.word]++;
-                // Animate flying to bucket
-                let fly = createDiv(cell.val);
-                fly.style.position="absolute";
-                fly.style.left=px+"px";
-                fly.style.top=py+"px";
-                fly.style.color="#fff";
-                fly.style.fontSize="28px";
-                fly.style.transition="all 0.7s ease-in-out";
-                document.body.appendChild(fly);
-                setTimeout(()=>{
-                    let bRect = bucket.getBoundingClientRect();
-                    fly.style.left=bRect.left+bRect.width/2+"px";
-                    fly.style.top=bRect.top+"px";
-                    fly.style.transform="scale(0.6)";
-                    fly.style.opacity="0.5";
-                },10);
-                setTimeout(()=>fly.remove(),800);
-                
-                cell.correct=false; // prevent double-click
-                
-                if(progress[cell.word]===3 && !found.includes(cell.word)){
-                    found.push(cell.word);
-                    bucket.innerText=`Found: ${found.length}/6`;
-                }
-                
-                if(found.length===codes.length){
-                    document.getElementById("message").style.display="block";
-                }
-            }
-        }
+  let bucket = document.getElementById("bucket");
+  for(let cell of grid){
+    let px = cell.x*cellWidth + cellWidth/2;
+    let py = cell.y*cellHeight + cellHeight/2;
+    if(cell.correct && dist(mouseX,mouseY,px,py)<cellWidth/2){
+      progress[cell.word]++;
+      // Animate flying number
+      let fly = createDiv(cell.val);
+      fly.style.position="absolute";
+      fly.style.left=px+"px";
+      fly.style.top=py+"px";
+      fly.style.color="#fff";
+      fly.style.fontSize="28px";
+      fly.style.transition="all 0.7s ease-in-out";
+      document.body.appendChild(fly);
+      setTimeout(()=>{
+        let bRect = bucket.getBoundingClientRect();
+        fly.style.left = bRect.left+bRect.width/2+"px";
+        fly.style.top = bRect.top+"px";
+        fly.style.transform="scale(0.6)";
+        fly.style.opacity="0.5";
+      },10);
+      setTimeout(()=>fly.remove(),800);
+      
+      cell.correct=false; // prevent double click
+      
+      if(progress[cell.word]===3 && !found.includes(cell.word)){
+        found.push(cell.word);
+        bucket.innerText = `Found: ${found.length}/6`;
+      }
+      if(found.length===codes.length){
+        document.getElementById("message").style.display="block";
+      }
     }
+  }
 }
 </script>
 </body>
